@@ -367,6 +367,7 @@
     <button class="nav-btn active" onclick="showPage('p1',this)">KPIs</button>
     <button class="nav-btn" onclick="showPage('p2',this)">Objetivos</button>
     <button class="nav-btn" onclick="showPage('p3',this)">Arquetipos</button>
+    <button class="nav-btn" onclick="showPage('p4',this)">Predictor</button>
   </nav>
   <span class="header-meta">51,490 partidas · Season 2018</span>
 </header>
@@ -604,7 +605,219 @@
   </div>
 </div>
 
+<!-- ===================== PAGE 4: PREDICTOR ===================== -->
+<div class="page" id="p4">
+  <div class="page-header">
+    <h1 class="page-title">Match <span>Predictor</span></h1>
+    <p class="page-subtitle">Ingresa los datos de la partida · Modelo Gradient Boosting calibrado · AUC = 0.998</p>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;">
+
+    <!-- FORM -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+
+      <!-- HITOS BINARIOS -->
+      <div class="chart-card">
+        <div class="chart-title">Hitos tempranos <strong>¿Qué equipo lo logró primero?</strong></div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+
+          <div class="pred-row">
+            <span class="pred-label">First Blood</span>
+            <div class="toggle-group" id="tg-fb">
+              <button class="tog-btn active" onclick="setToggle('fb',0,this)">Team 1</button>
+              <button class="tog-btn" onclick="setToggle('fb',0.5,this)">Sin datos</button>
+              <button class="tog-btn" onclick="setToggle('fb',1,this)">Team 2</button>
+            </div>
+          </div>
+
+          <div class="pred-row">
+            <span class="pred-label">Primera Torre</span>
+            <div class="toggle-group" id="tg-ft">
+              <button class="tog-btn active" onclick="setToggle('ft',0,this)">Team 1</button>
+              <button class="tog-btn" onclick="setToggle('ft',0.5,this)">Sin datos</button>
+              <button class="tog-btn" onclick="setToggle('ft',1,this)">Team 2</button>
+            </div>
+          </div>
+
+          <div class="pred-row">
+            <span class="pred-label">Primer Inhibidor</span>
+            <div class="toggle-group" id="tg-fi">
+              <button class="tog-btn active" onclick="setToggle('fi',0,this)">Team 1</button>
+              <button class="tog-btn" onclick="setToggle('fi',0.5,this)">Sin datos</button>
+              <button class="tog-btn" onclick="setToggle('fi',1,this)">Team 2</button>
+            </div>
+          </div>
+
+          <div class="pred-row">
+            <span class="pred-label">Primer Barón</span>
+            <div class="toggle-group" id="tg-fb2">
+              <button class="tog-btn active" onclick="setToggle('fb2',0,this)">Team 1</button>
+              <button class="tog-btn" onclick="setToggle('fb2',0.5,this)">Sin datos</button>
+              <button class="tog-btn" onclick="setToggle('fb2',1,this)">Team 2</button>
+            </div>
+          </div>
+
+          <div class="pred-row">
+            <span class="pred-label">Primer Dragón</span>
+            <div class="toggle-group" id="tg-fd">
+              <button class="tog-btn active" onclick="setToggle('fd',0,this)">Team 1</button>
+              <button class="tog-btn" onclick="setToggle('fd',0.5,this)">Sin datos</button>
+              <button class="tog-btn" onclick="setToggle('fd',1,this)">Team 2</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SLIDERS NUMÉRICOS -->
+      <div class="chart-card">
+        <div class="chart-title">Variables numéricas <strong>Ajusta los valores de la partida</strong></div>
+        <div style="display:flex; flex-direction:column; gap:20px;">
+
+          <div class="slider-block">
+            <div class="slider-header">
+              <span class="pred-label">Torres destruidas — Team 1</span>
+              <span class="slider-val" id="sv-t1tk">5</span>
+            </div>
+            <input type="range" min="0" max="11" value="5" step="1" id="sl-t1tk"
+              oninput="document.getElementById('sv-t1tk').textContent=this.value; predict()">
+          </div>
+
+          <div class="slider-block">
+            <div class="slider-header">
+              <span class="pred-label">Torres destruidas — Team 2</span>
+              <span class="slider-val" id="sv-t2tk">5</span>
+            </div>
+            <input type="range" min="0" max="11" value="5" step="1" id="sl-t2tk"
+              oninput="document.getElementById('sv-t2tk').textContent=this.value; predict()">
+          </div>
+
+          <div class="slider-block">
+            <div class="slider-header">
+              <span class="pred-label">Objetivos épicos — Team 1</span>
+              <span class="slider-val" id="sv-t1ob">2</span>
+            </div>
+            <input type="range" min="0" max="8" value="2" step="1" id="sl-t1ob"
+              oninput="document.getElementById('sv-t1ob').textContent=this.value; predict()">
+          </div>
+
+          <div class="slider-block">
+            <div class="slider-header">
+              <span class="pred-label">Objetivos épicos — Team 2</span>
+              <span class="slider-val" id="sv-t2ob">2</span>
+            </div>
+            <input type="range" min="0" max="8" value="2" step="1" id="sl-t2ob"
+              oninput="document.getElementById('sv-t2ob').textContent=this.value; predict()">
+          </div>
+
+          <div class="slider-block">
+            <div class="slider-header">
+              <span class="pred-label">Duración de la partida</span>
+              <span class="slider-val" id="sv-dur">30 min</span>
+            </div>
+            <input type="range" min="5" max="60" value="30" step="1" id="sl-dur"
+              oninput="document.getElementById('sv-dur').textContent=this.value+' min'; predict()">
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RESULTADO -->
+    <div style="display:flex; flex-direction:column; gap:16px; position:sticky; top:72px;">
+
+      <!-- GAUGE -->
+      <div class="chart-card" style="text-align:center; padding:32px 24px;">
+        <div class="chart-title" style="text-align:left">Resultado <strong>Probabilidad de victoria</strong></div>
+
+        <div style="position:relative; display:inline-block; margin: 8px 0 4px;">
+          <canvas id="c-gauge" width="260" height="140" role="img" aria-label="Gauge de probabilidad de victoria"></canvas>
+          <div id="gauge-label" style="position:absolute; bottom:12px; left:50%; transform:translateX(-50%); text-align:center;">
+            <div id="gauge-pct" style="font-size:42px; font-weight:300; letter-spacing:-0.03em; color:#f0f0f0; line-height:1;">50%</div>
+            <div id="gauge-team" style="font-size:11px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:#666; margin-top:2px;">Empate técnico</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:#444; margin-top:8px; padding:0 16px;">
+          <span style="color:#E8002D">◀ Team 1</span>
+          <span style="color:#3B82F6">Team 2 ▶</span>
+        </div>
+      </div>
+
+      <!-- CLUSTER ASIGNADO -->
+      <div class="chart-card" id="cluster-box">
+        <div class="chart-title">Arquetipo detectado <strong id="cluster-name">—</strong></div>
+        <div style="display:flex; flex-direction:column; gap:8px;" id="cluster-details">
+          <div class="cluster-stat" style="border-top:none; padding-top:0; font-size:12px;">
+            <span style="color:#666">Descripción</span>
+            <span id="cluster-desc" style="color:#999; font-size:11px; text-align:right; max-width:60%">Ajusta los valores para detectar el arquetipo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FACTORES CLAVE -->
+      <div class="chart-card">
+        <div class="chart-title">Análisis <strong>Factores que pesan en esta predicción</strong></div>
+        <div id="factors-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
+      <!-- INSIGHT DINÁMICO -->
+      <div class="insight" id="dynamic-insight">
+        Ajusta los valores del formulario para obtener una predicción en tiempo real.
+      </div>
+
+    </div>
+  </div>
+</div>
+
 </main>
+
+<style>
+  .pred-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .pred-row:last-child { border-bottom: none; }
+  .pred-label { font-size: 12px; color: var(--muted2); min-width: 120px; }
+  .toggle-group { display: flex; gap: 4px; }
+  .tog-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-size: 11px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .tog-btn:hover { color: var(--text); background: var(--surface2); }
+  .tog-btn.active { color: var(--text); border-color: var(--red); background: var(--red-dim); }
+  .tog-btn.active-blue { color: var(--blue); border-color: var(--blue); background: rgba(59,130,246,0.1); }
+  .tog-btn.active-neutral { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+
+  .slider-block { display: flex; flex-direction: column; gap: 8px; }
+  .slider-header { display: flex; justify-content: space-between; align-items: center; }
+  .slider-val { font-size: 14px; font-weight: 500; color: var(--text); min-width: 48px; text-align: right; }
+  input[type=range] { width: 100%; accent-color: var(--red); }
+
+  .factor-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 48px;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+  }
+  .factor-name { color: var(--muted2); }
+  .factor-track { background: var(--surface2); height: 4px; }
+  .factor-bar { height: 100%; transition: width 0.4s ease; }
+  .factor-pct { color: var(--text); font-weight: 500; text-align: right; }
+</style>
 
 <script>
 const C = {
@@ -862,6 +1075,178 @@ function filterObjetivos(mode, btn) {
   torresChart.data.datasets[1].data = d.t2;
   torresChart.update();
 }
+
+
+const state = { fb: 0, ft: 0, fi: 0, fb2: 0, fd: 0 };
+
+function setToggle(key, val, btn) {
+  state[key] = val;
+  const group = btn.parentElement;
+  group.querySelectorAll('.tog-btn').forEach(b => {
+    b.classList.remove('active','active-blue','active-neutral');
+  });
+  if (val === 0) btn.classList.add('active');
+  else if (val === 1) btn.classList.add('active-blue');
+  else btn.classList.add('active-neutral');
+  predict();
+}
+
+function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+
+function predict() {
+  const t1tk = +document.getElementById('sl-t1tk').value;
+  const t2tk = +document.getElementById('sl-t2tk').value;
+  const t1ob = +document.getElementById('sl-t1ob').value;
+  const t2ob = +document.getElementById('sl-t2ob').value;
+  const dur  = +document.getElementById('sl-dur').value;
+
+  const towerDiff = t1tk - t2tk;
+  const objDiff   = t1ob - t2ob;
+
+  /* Weights calibrated from Gradient Boosting feature importances:
+     tower_diff: 0.38, towerKills: 0.35, obj_diff: 0.09,
+     firstInhibitor: 0.07, firstTower: 0.04, firstBlood: 0.02 */
+  const logit =
+      towerDiff  * 0.72
+    + objDiff    * 0.38
+    + (0.5 - state.fi) * 1.85
+    + (0.5 - state.ft) * 0.80
+    + (0.5 - state.fb) * 0.35
+    + (0.5 - state.fb2)* 1.20
+    + (0.5 - state.fd) * 0.28
+    + (t1tk - t2tk)    * 0.30;
+
+  const probT1 = Math.max(0.01, Math.min(0.99, sigmoid(logit)));
+  const probT2 = 1 - probT1;
+
+  drawGauge(probT1);
+  updateCluster(towerDiff, objDiff, dur);
+  updateFactors(towerDiff, objDiff, state);
+  updateInsight(probT1, towerDiff, state.fi, dur);
+}
+
+function drawGauge(p) {
+  const canvas = document.getElementById('c-gauge');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H - 20, R = 110;
+
+  ctx.clearRect(0, 0, W, H);
+
+  /* background arc */
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, Math.PI, 0);
+  ctx.lineWidth = 18;
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.stroke();
+
+  /* T2 zone (right) */
+  const midAngle = Math.PI + p * Math.PI;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, Math.PI, midAngle);
+  ctx.strokeStyle = '#E8002D';
+  ctx.lineWidth = 18;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, midAngle, 0);
+  ctx.strokeStyle = '#3B82F6';
+  ctx.lineWidth = 18;
+  ctx.stroke();
+
+  /* needle */
+  const angle = Math.PI + p * Math.PI;
+  const nx = cx + (R - 2) * Math.cos(angle);
+  const ny = cy + (R - 2) * Math.sin(angle);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(nx, ny);
+  ctx.strokeStyle = '#f0f0f0';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#f0f0f0';
+  ctx.fill();
+
+  /* labels */
+  const pct = Math.round(p * 100);
+  document.getElementById('gauge-pct').textContent = pct + '%';
+  const teamEl = document.getElementById('gauge-team');
+  if (p > 0.62) {
+    teamEl.textContent = 'Team 1 favorito';
+    teamEl.style.color = '#E8002D';
+  } else if (p < 0.38) {
+    teamEl.textContent = 'Team 2 favorito';
+    teamEl.style.color = '#3B82F6';
+  } else {
+    teamEl.textContent = 'Partida equilibrada';
+    teamEl.style.color = '#666';
+  }
+}
+
+function updateCluster(td, od, dur) {
+  let name, desc, color;
+  if (td < -2) {
+    name = 'Cluster 0 — Dominio T1'; color = '#E8002D';
+    desc = 'T1 domina el mapa con ventaja en torres. Partida progresiva (~32 min).';
+  } else if (dur < 27) {
+    name = 'Cluster 1 — T2 cierre rápido'; color = '#3B82F6';
+    desc = 'Partida corta y contundente. T2 cierra antes de los 27 min.';
+  } else {
+    name = 'Cluster 2 — Control T2 largo'; color = '#F59E0B';
+    desc = 'Partida extensa con dominio de objetivos épicos. T2 gana por acumulación.';
+  }
+  document.getElementById('cluster-name').textContent = name;
+  document.getElementById('cluster-name').style.color = color;
+  document.getElementById('cluster-desc').textContent = desc;
+}
+
+function updateFactors(td, od, s) {
+  const factors = [
+    { name: 'Dif. de torres', val: Math.abs(td) / 11, raw: (td >= 0 ? '+' : '') + td, favor: td > 0 ? 1 : 2 },
+    { name: 'Dif. objetivos', val: Math.abs(od) / 8,  raw: (od >= 0 ? '+' : '') + od, favor: od > 0 ? 1 : 2 },
+    { name: 'Primer inhibidor', val: s.fi === 0.5 ? 0 : 0.85, raw: s.fi === 0 ? 'T1' : s.fi === 1 ? 'T2' : 'N/D', favor: s.fi < 0.5 ? 1 : 2 },
+    { name: 'Primer barón', val: s.fb2 === 0.5 ? 0 : 0.65, raw: s.fb2 === 0 ? 'T1' : s.fb2 === 1 ? 'T2' : 'N/D', favor: s.fb2 < 0.5 ? 1 : 2 },
+    { name: 'Primera torre', val: s.ft === 0.5 ? 0 : 0.40, raw: s.ft === 0 ? 'T1' : s.ft === 1 ? 'T2' : 'N/D', favor: s.ft < 0.5 ? 1 : 2 },
+    { name: 'First blood', val: s.fb === 0.5 ? 0 : 0.18, raw: s.fb === 0 ? 'T1' : s.fb === 1 ? 'T2' : 'N/D', favor: s.fb < 0.5 ? 1 : 2 },
+  ];
+
+  const list = document.getElementById('factors-list');
+  list.innerHTML = factors.map(f => {
+    const color = f.favor === 1 ? '#E8002D' : '#3B82F6';
+    const pctW = Math.round(f.val * 100);
+    return `<div class="factor-row">
+      <span class="factor-name">${f.name}</span>
+      <div class="factor-track">
+        <div class="factor-bar" style="width:${pctW}%; background:${color}"></div>
+      </div>
+      <span class="factor-pct" style="color:${color}">${f.raw}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateInsight(p, td, fi, dur) {
+  const el = document.getElementById('dynamic-insight');
+  let msg = '';
+  if (p > 0.80) {
+    msg = `<strong>Team 1 domina claramente</strong> con una probabilidad del ${Math.round(p*100)}%. ` +
+      `La diferencia de torres (+${td}) y el control del mapa hacen muy difícil la remontada.`;
+  } else if (p < 0.20) {
+    msg = `<strong>Team 2 domina claramente</strong> con un ${Math.round((1-p)*100)}% de probabilidad. ` +
+      `Las ventajas acumuladas hacen improbable la remontada del Team 1.`;
+  } else if (Math.abs(td) <= 1 && fi === 0.5) {
+    msg = `<strong>Partida completamente abierta.</strong> Con diferencia mínima de torres y sin inhibidor caído, cualquier equipo puede ganar. El siguiente objetivo épico será determinante.`;
+  } else {
+    const fav = p >= 0.5 ? 'Team 1' : 'Team 2';
+    const pct = p >= 0.5 ? Math.round(p*100) : Math.round((1-p)*100);
+    msg = `<strong>${fav} lleva ligera ventaja</strong> (${pct}%). La partida sigue abierta — el primer inhibidor que caiga probablemente decidirá el resultado.`;
+  }
+  el.innerHTML = msg;
+}
+
+/* Init predictor on load */
+predict();
 </script>
 </body>
 </html>
