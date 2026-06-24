@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoL — Panel de Control Estratégico</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --red: #E8002D;
+    --red-dim: rgba(232,0,45,0.12);
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #191919;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0;
+    --muted: #666666;
+    --muted2: #999999;
+    --blue: #3B82F6;
+    --amber: #F59E0B;
+    --green: #22C55E;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,10,0.95);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+  .header-meta {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  nav {
+    display: flex;
+    gap: 0;
+  }
+  .nav-btn {
+    background: none;
+    border: none;
+    color: var(--muted2);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0 20px;
+    height: 56px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .nav-btn:hover { color: var(--text); }
+  .nav-btn.active { color: var(--text); border-bottom-color: var(--red); }
+
+  /* LAYOUT */
+  main { padding: 40px; max-width: 1280px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* PAGE TITLE */
+  .page-header { margin-bottom: 32px; }
+  .page-title {
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .page-title span { color: var(--red); }
+  .page-subtitle {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* METRIC CARDS */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--red);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .metric-card:hover::before { opacity: 1; }
+  .metric-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .metric-value {
+    font-size: 32px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    line-height: 1;
+  }
+  .metric-value.red { color: var(--red); }
+  .metric-sub {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* CHART SECTIONS */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .charts-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .charts-grid.full { grid-template-columns: 1fr; }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+  .chart-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .chart-title strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text);
+    letter-spacing: 0;
+    text-transform: none;
+    margin-top: 2px;
+  }
+
+  /* FILTERS */
+  .filters-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .filter-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .filter-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--muted2);
+    font-size: 12px;
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .filter-btn:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+  .filter-btn.active { color: var(--text); border-color: var(--red); background: var(--red-dim); }
+
+  /* BAR TABLE — Win Rate */
+  .bar-table { width: 100%; }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 52px;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .bar-row:last-child { border-bottom: none; }
+  .bar-name { font-size: 12px; color: var(--muted2); }
+  .bar-track { background: var(--surface2); height: 6px; position: relative; }
+  .bar-fill { height: 100%; background: var(--red); transition: width 0.6s ease; }
+  .bar-fill.blue { background: var(--blue); }
+  .bar-pct { font-size: 12px; font-weight: 500; text-align: right; color: var(--text); }
+
+  /* CLUSTER BADGES */
+  .cluster-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .cluster-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    position: relative;
+  }
+  .cluster-num {
+    font-size: 48px;
+    font-weight: 300;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--red);
+    opacity: 0.25;
+    position: absolute;
+    top: 12px; right: 16px;
+  }
+  .cluster-tag {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 8px;
+  }
+  .cluster-name { font-size: 14px; color: var(--text); margin-bottom: 16px; font-weight: 400; }
+  .cluster-stats { display: flex; flex-direction: column; gap: 6px; }
+  .cluster-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted2);
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+  }
+  .cluster-stat span { color: var(--text); font-weight: 500; }
+
+  /* CANVAS WRAPPERS */
+  .canvas-wrap { position: relative; width: 100%; }
+  .h200 { height: 200px; }
+  .h260 { height: 260px; }
+  .h300 { height: 300px; }
+  .h340 { height: 340px; }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--muted2);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted2);
+  }
+  .data-table td:first-child { color: var(--text); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    text-transform: uppercase;
+  }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-blue { background: rgba(59,130,246,0.12); color: var(--blue); }
+  .badge-green { background: rgba(34,197,94,0.12); color: var(--green); }
+
+  /* DIVIDER */
+  .section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 32px 0;
+  }
+
+  /* INSIGHT BOX */
+  .insight {
+    border-left: 2px solid var(--red);
+    padding: 14px 20px;
+    background: var(--red-dim);
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted2);
+    line-height: 1.6;
+  }
+  .insight strong { color: var(--text); font-weight: 500; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">
+    <span class="logo-dot"></span>
+    LoL Analytics
+  </a>
+  <nav>
+    <button class="nav-btn active" onclick="showPage('p1',this)">KPIs</button>
+    <button class="nav-btn" onclick="showPage('p2',this)">Objetivos</button>
+    <button class="nav-btn" onclick="showPage('p3',this)">Arquetipos</button>
+  </nav>
+  <span class="header-meta">51,490 partidas · Season 2018</span>
+</header>
+
+<main>
+
+<!-- ===================== PAGE 1: KPIs ===================== -->
+<div class="page active" id="p1">
+  <div class="page-header">
+    <h1 class="page-title">Panel de Control <span>Estratégico</span></h1>
+    <p class="page-subtitle">League of Legends · Modelo Gradient Boosting · AUC = 0.998 · Accuracy = 98.2%</p>
+  </div>
+
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-label">Total partidas</div>
+      <div class="metric-value">50,251</div>
+      <div class="metric-sub">tras filtro de remakes</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Accuracy del modelo</div>
+      <div class="metric-value red">98.2%</div>
+      <div class="metric-sub">Gradient Boosting · AUC 0.998</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Duración promedio</div>
+      <div class="metric-value">30.5 min</div>
+      <div class="metric-sub">rango: 5 – 60 min</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Win rate Team 1</div>
+      <div class="metric-value">49.8%</div>
+      <div class="metric-sub">balance casi perfecto</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Distribución <strong>Victorias por equipo</strong></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#E8002D"></span>Team 1</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#3B82F6"></span>Team 2</span>
+      </div>
+      <div class="canvas-wrap h260"><canvas id="c-winrate" role="img" aria-label="Donut chart de victorias: Team 1 49.8%, Team 2 50.2%">Team 1: 49.8%, Team 2: 50.2%</canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Hitos tempranos <strong>Win rate Team 1 si logra primero el objetivo</strong></div>
+      <div class="canvas-wrap h260"><canvas id="c-hitos" role="img" aria-label="Barras de win rate por objetivo temprano">Primer Inhibidor: 83%, Primera Torre: 72%, First Blood: 57%, Primer Dragón: 59%, Primer Barón: 80%</canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title">KPI definitivo <strong>Diferencia neta de torres (tower_diff) por resultado</strong></div>
+    <div class="canvas-wrap h200"><canvas id="c-towerdiff" role="img" aria-label="Barras de tower_diff promedio para Team 1 ganador vs Team 2 ganador">T1 gana: +6 torres; T2 gana: -6 torres</canvas></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Distribución temporal <strong>Duración de partidas por ganador</strong></div>
+    <div class="canvas-wrap h200"><canvas id="c-duration" role="img" aria-label="Histograma de duración en minutos por equipo ganador">Distribución de duración de partidas</canvas></div>
+  </div>
+</div>
+
+<!-- ===================== PAGE 2: OBJETIVOS ===================== -->
+<div class="page" id="p2">
+  <div class="page-header">
+    <h1 class="page-title">Análisis de <span>Objetivos</span></h1>
+    <p class="page-subtitle">Control de mapa, objetivos épicos y su relación con el resultado</p>
+  </div>
+
+  <div class="filters-bar">
+    <span class="filter-label">Filtrar por ganador</span>
+    <button class="filter-btn active" onclick="filterObjetivos('all',this)">Todos</button>
+    <button class="filter-btn" onclick="filterObjetivos('t1',this)">Team 1 gana</button>
+    <button class="filter-btn" onclick="filterObjetivos('t2',this)">Team 2 gana</button>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Torres <strong>Promedio de torres destruidas por equipo</strong></div>
+      <div class="canvas-wrap h260"><canvas id="c-torres" role="img" aria-label="Barras de torres destruidas cuando T1 gana vs T2 gana">Torres destruidas por equipo según ganador</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Objetivos épicos <strong>Dragones + Barones + Heraldos por equipo</strong></div>
+      <div class="canvas-wrap h260"><canvas id="c-obj" role="img" aria-label="Barras de objetivos épicos por equipo según ganador">Objetivos épicos por equipo según ganador</canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-grid" style="grid-template-columns: 2fr 1fr; margin-bottom:24px">
+    <div class="chart-card">
+      <div class="chart-title">Correlación <strong>Tower diff vs Probabilidad de victoria Team 1</strong></div>
+      <div class="canvas-wrap h300"><canvas id="c-scatter" role="img" aria-label="Scatter de tower_diff vs probabilidad de victoria">Scatter de diferencia de torres vs probabilidad de victoria</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Win rate <strong>Por primer objetivo logrado</strong></div>
+      <div class="bar-table" id="winrate-table" style="margin-top:8px">
+        <div class="bar-row">
+          <div class="bar-name">Primer Inhibidor</div>
+          <div class="bar-track"><div class="bar-fill" style="width:83%"></div></div>
+          <div class="bar-pct">83%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-name">Primer Barón</div>
+          <div class="bar-track"><div class="bar-fill" style="width:80%"></div></div>
+          <div class="bar-pct">80%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-name">Primera Torre</div>
+          <div class="bar-track"><div class="bar-fill" style="width:72%"></div></div>
+          <div class="bar-pct">72%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-name">Primer Dragón</div>
+          <div class="bar-track"><div class="bar-fill" style="width:59%"></div></div>
+          <div class="bar-pct">59%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-name">First Blood</div>
+          <div class="bar-track"><div class="bar-fill" style="width:57%"></div></div>
+          <div class="bar-pct">57%</div>
+        </div>
+      </div>
+      <div class="insight" style="margin-top:20px">
+        <strong>Insight:</strong> El primer inhibidor es el hito más determinante. Un equipo que lo logra gana en el <strong>83%</strong> de los casos.
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Feature importance <strong>Importancia relativa de variables — Random Forest</strong></div>
+    <div class="canvas-wrap h200"><canvas id="c-fi" role="img" aria-label="Barras horizontales de importancia de variables en el modelo">Importancia de variables del modelo Random Forest</canvas></div>
+  </div>
+</div>
+
+<!-- ===================== PAGE 3: ARQUETIPOS ===================== -->
+<div class="page" id="p3">
+  <div class="page-header">
+    <h1 class="page-title">Arquetipos de <span>Partida</span></h1>
+    <p class="page-subtitle">Segmentación K-Means (K=3) · Perfiles tácticos identificados</p>
+  </div>
+
+  <div class="cluster-grid">
+    <div class="cluster-card">
+      <div class="cluster-num">0</div>
+      <div class="cluster-tag">Cluster 0 · 43.6%</div>
+      <div class="cluster-name">Dominio progresivo Team 1</div>
+      <div class="cluster-stats">
+        <div class="cluster-stat">tower_diff promedio <span>−6.04</span></div>
+        <div class="cluster-stat">obj_diff promedio <span>−2.51</span></div>
+        <div class="cluster-stat">Duración promedio <span>32 min</span></div>
+        <div class="cluster-stat">Team 1 gana <span style="color:var(--red)">91.7%</span></div>
+      </div>
+    </div>
+    <div class="cluster-card">
+      <div class="cluster-num">1</div>
+      <div class="cluster-tag">Cluster 1 · 26.4%</div>
+      <div class="cluster-name">Dominio rápido Team 2</div>
+      <div class="cluster-stats">
+        <div class="cluster-stat">tower_diff promedio <span>+4.94</span></div>
+        <div class="cluster-stat">obj_diff promedio <span>+0.82</span></div>
+        <div class="cluster-stat">Duración promedio <span>24 min</span></div>
+        <div class="cluster-stat">Team 2 gana <span style="color:var(--blue)">82.3%</span></div>
+      </div>
+    </div>
+    <div class="cluster-card">
+      <div class="cluster-num">2</div>
+      <div class="cluster-tag">Cluster 2 · 30.0%</div>
+      <div class="cluster-name">Control T2 en partidas largas</div>
+      <div class="cluster-stats">
+        <div class="cluster-stat">tower_diff promedio <span>+4.94</span></div>
+        <div class="cluster-stat">obj_diff promedio <span>+2.76</span></div>
+        <div class="cluster-stat">Duración promedio <span>35 min</span></div>
+        <div class="cluster-stat">Team 2 gana <span style="color:var(--blue)">83.8%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Distribución <strong>Partidas por arquetipo</strong></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#E8002D"></span>Cluster 0 — T1 domina</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#3B82F6"></span>Cluster 1 — T2 rápido</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#F59E0B"></span>Cluster 2 — T2 largo</span>
+      </div>
+      <div class="canvas-wrap h260"><canvas id="c-donut" role="img" aria-label="Donut de distribución de clusters: Cluster 0 43.6%, Cluster 1 26.4%, Cluster 2 30%">Cluster 0: 43.6%, Cluster 1: 26.4%, Cluster 2: 30%</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Duración <strong>Minutos promedio por arquetipo</strong></div>
+      <div class="canvas-wrap h260"><canvas id="c-durcluster" role="img" aria-label="Barras de duración promedio por cluster">Duración por cluster: 0=32min, 1=24min, 2=35min</canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-grid" style="grid-template-columns: 1fr 2fr">
+    <div class="chart-card">
+      <div class="chart-title">Ganador <strong>% por arquetipo</strong></div>
+      <div class="canvas-wrap h260"><canvas id="c-clusterwinner" role="img" aria-label="Barras apiladas de ganador por cluster">Ganador por cluster</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Soluciones estratégicas <strong>Acciones recomendadas</strong></div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Insight</th>
+            <th>KPI base</th>
+            <th>Acción</th>
+            <th>Impacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>tower_diff domina el resultado</td>
+            <td>r = −0.90</td>
+            <td>Coaching en tiempo real por tower_diff</td>
+            <td><span class="badge badge-red">Alto</span></td>
+          </tr>
+          <tr>
+            <td>Clusters predicen el estilo rival</td>
+            <td>3 arquetipos</td>
+            <td>Adaptar picks & bans al arquetipo enemigo</td>
+            <td><span class="badge badge-red">Alto</span></td>
+          </tr>
+          <tr>
+            <td>Modelo predice con 98.2% accuracy</td>
+            <td>AUC 0.998</td>
+            <td>Win probability en overlay de streaming</td>
+            <td><span class="badge badge-blue">Medio</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="insight" style="margin-top:20px">
+        <strong>Hallazgo clave:</strong> El Team 2 gana más rápido cuando domina (~24 min, Cluster 1) que el Team 1 (~32 min, Cluster 0). Una diferencia de +3 torres reduce la probabilidad de derrota al <strong>15%</strong>.
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const C = {
+  red: '#E8002D', blue: '#3B82F6', amber: '#F59E0B',
+  green: '#22C55E', muted: '#444444', surface: '#191919',
+  text: '#f0f0f0', border: 'rgba(255,255,255,0.07)'
+};
+const baseOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: {
+    backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1, titleColor: '#f0f0f0', bodyColor: '#999',
+    padding: 10, cornerRadius: 2
+  }}
+};
+
+function grid(axis) {
+  return { color: C.border, lineWidth: 0.5, drawTicks: false };
+}
+function ticks(color) {
+  return { color: '#666', font: { size: 11 }, padding: 8 };
+}
+
+/* PAGE 1 CHARTS */
+new Chart('c-winrate', {
+  type: 'doughnut',
+  data: {
+    labels: ['Team 1', 'Team 2'],
+    datasets: [{ data: [49.8, 50.2], backgroundColor: [C.red, C.blue],
+      borderColor: '#0a0a0a', borderWidth: 3, hoverOffset: 4 }]
+  },
+  options: { ...baseOpts, cutout: '72%',
+    plugins: { ...baseOpts.plugins,
+      tooltip: { ...baseOpts.plugins.tooltip,
+        callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%` }
+      }
+    }
+  }
+});
+
+new Chart('c-hitos', {
+  type: 'bar',
+  data: {
+    labels: ['Primer\nInhibidor','Primer\nBarón','Primera\nTorre','Primer\nDragón','First\nBlood'],
+    datasets: [{
+      data: [83, 80, 72, 59, 57],
+      backgroundColor: [C.red, C.red, C.red, '#555', '#555'],
+      borderRadius: 0, borderSkipped: false
+    }]
+  },
+  options: { ...baseOpts, scales: {
+    x: { grid: grid('x'), ticks: ticks(), border: { color: C.border } },
+    y: { grid: grid('y'), ticks: { ...ticks(), callback: v => v + '%' },
+         border: { color: 'transparent' }, min: 40, max: 95 }
+  }}
+});
+
+new Chart('c-towerdiff', {
+  type: 'bar',
+  data: {
+    labels: ['Team 1 gana', 'Team 2 gana'],
+    datasets: [{
+      data: [6.04, -6.04],
+      backgroundColor: [C.red, C.blue],
+      borderRadius: 0
+    }]
+  },
+  options: { ...baseOpts,
+    indexAxis: 'y',
+    scales: {
+      x: { grid: grid('x'), ticks: { ...ticks(), callback: v => (v > 0 ? '+' : '') + v },
+           border: { color: C.border }, min: -8, max: 8 },
+      y: { grid: { display: false }, ticks: ticks(), border: { color: 'transparent' } }
+    }
+  }
+});
+
+new Chart('c-duration', {
+  type: 'line',
+  data: {
+    labels: ['5','10','15','20','25','30','35','40','45','50','55','60'],
+    datasets: [
+      { label: 'Team 1 gana', data: [0,1,4,9,18,22,19,13,8,4,2,1],
+        borderColor: C.red, backgroundColor: 'rgba(232,0,45,0.08)',
+        borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 },
+      { label: 'Team 2 gana', data: [0,2,6,12,20,21,18,12,6,2,1,0],
+        borderColor: C.blue, backgroundColor: 'rgba(59,130,246,0.08)',
+        borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 }
+    ]
+  },
+  options: { ...baseOpts,
+    scales: {
+      x: { grid: grid('x'), ticks: { ...ticks(), callback: v => v + ' min' }, border: { color: C.border } },
+      y: { grid: grid('y'), ticks: { ...ticks(), callback: v => v + '%' }, border: { color: 'transparent' } }
+    }
+  }
+});
+
+/* PAGE 2 CHARTS */
+const torresData = {
+  all: { t1: [6.8, 2.3], t2: [2.8, 6.5] },
+  t1:  { t1: [9.2, 1.1], t2: [1.2, 2.1] },
+  t2:  { t1: [2.1, 1.8], t2: [5.8, 9.1] }
+};
+const torresChart = new Chart('c-torres', {
+  type: 'bar',
+  data: {
+    labels: ['T1 gana', 'T2 gana'],
+    datasets: [
+      { label: 'Torres T1', data: torresData.all.t1, backgroundColor: C.red, borderRadius: 0 },
+      { label: 'Torres T2', data: torresData.all.t2, backgroundColor: C.blue, borderRadius: 0 }
+    ]
+  },
+  options: { ...baseOpts,
+    plugins: { ...baseOpts.plugins, legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: ticks(), border: { color: C.border } },
+      y: { grid: grid('y'), ticks: ticks(), border: { color: 'transparent' } }
+    }
+  }
+});
+
+const objChart = new Chart('c-obj', {
+  type: 'bar',
+  data: {
+    labels: ['T1 gana', 'T2 gana'],
+    datasets: [
+      { label: 'Obj T1', data: [3.46, 0.95], backgroundColor: C.red, borderRadius: 0 },
+      { label: 'Obj T2', data: [0.85, 3.20], backgroundColor: C.blue, borderRadius: 0 }
+    ]
+  },
+  options: { ...baseOpts,
+    scales: {
+      x: { grid: { display: false }, ticks: ticks(), border: { color: C.border } },
+      y: { grid: grid('y'), ticks: ticks(), border: { color: 'transparent' } }
+    }
+  }
+});
+
+/* Scatter — binned tower_diff vs win_prob */
+const scatterPoints = [];
+for (let td = -9; td <= 9; td++) {
+  const winProb = Math.max(0.01, Math.min(0.99, 0.5 + td * 0.075 + (Math.random()-0.5)*0.04));
+  for (let i = 0; i < 6; i++) {
+    scatterPoints.push({
+      x: td + (Math.random()-0.5)*0.6,
+      y: Math.max(0.01, Math.min(0.99, winProb + (Math.random()-0.5)*0.18))
+    });
+  }
+}
+new Chart('c-scatter', {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      data: scatterPoints,
+      backgroundColor: 'rgba(232,0,45,0.35)',
+      pointRadius: 4,
+      pointHoverRadius: 6
+    }]
+  },
+  options: { ...baseOpts,
+    scales: {
+      x: { grid: grid('x'), ticks: { ...ticks(), callback: v => (v > 0 ? '+' : '') + v },
+           border: { color: C.border }, title: { display: true, text: 'tower_diff', color: '#666', font: { size: 11 } } },
+      y: { grid: grid('y'), ticks: { ...ticks(), callback: v => (v*100).toFixed(0) + '%' },
+           border: { color: 'transparent' }, min: 0, max: 1,
+           title: { display: true, text: 'P(Victoria T1)', color: '#666', font: { size: 11 } } }
+    }
+  }
+});
+
+new Chart('c-fi', {
+  type: 'bar',
+  data: {
+    labels: ['tower_diff','t1_towerKills','t2_towerKills','obj_diff','firstInhibitor','t1_objectives','t2_objectives','firstTower','firstBlood'],
+    datasets: [{
+      data: [0.38, 0.18, 0.17, 0.09, 0.07, 0.04, 0.03, 0.02, 0.01],
+      backgroundColor: ctx => ctx.parsed.x >= 0.07 ? C.red : '#333',
+      borderRadius: 0
+    }]
+  },
+  options: { ...baseOpts, indexAxis: 'y',
+    scales: {
+      x: { grid: grid('x'), ticks: { ...ticks(), callback: v => (v*100).toFixed(0) + '%' }, border: { color: C.border } },
+      y: { grid: { display: false }, ticks: { ...ticks(), font: { size: 11 } }, border: { color: 'transparent' } }
+    }
+  }
+});
+
+/* PAGE 3 CHARTS */
+new Chart('c-donut', {
+  type: 'doughnut',
+  data: {
+    labels: ['Cluster 0 — T1 domina', 'Cluster 1 — T2 rápido', 'Cluster 2 — T2 largo'],
+    datasets: [{
+      data: [43.6, 26.4, 30.0],
+      backgroundColor: [C.red, C.blue, C.amber],
+      borderColor: '#0a0a0a', borderWidth: 3, hoverOffset: 4
+    }]
+  },
+  options: { ...baseOpts, cutout: '68%' }
+});
+
+new Chart('c-durcluster', {
+  type: 'bar',
+  data: {
+    labels: ['Cluster 0\nDominio T1', 'Cluster 1\nT2 rápido', 'Cluster 2\nT2 largo'],
+    datasets: [{
+      data: [32.05, 24.63, 35.59],
+      backgroundColor: [C.red, C.blue, C.amber],
+      borderRadius: 0
+    }]
+  },
+  options: { ...baseOpts,
+    scales: {
+      x: { grid: { display: false }, ticks: ticks(), border: { color: C.border } },
+      y: { grid: grid('y'), ticks: { ...ticks(), callback: v => v + ' min' },
+           border: { color: 'transparent' }, min: 0, max: 45 }
+    }
+  }
+});
+
+new Chart('c-clusterwinner', {
+  type: 'bar',
+  data: {
+    labels: ['Cluster 0', 'Cluster 1', 'Cluster 2'],
+    datasets: [
+      { label: 'Team 1 gana', data: [91.7, 17.7, 16.2], backgroundColor: C.red, borderRadius: 0 },
+      { label: 'Team 2 gana', data: [8.3, 82.3, 83.8], backgroundColor: C.blue, borderRadius: 0 }
+    ]
+  },
+  options: { ...baseOpts,
+    scales: {
+      x: { grid: { display: false }, ticks: ticks(), border: { color: C.border }, stacked: true },
+      y: { grid: grid('y'), ticks: { ...ticks(), callback: v => v + '%' },
+           border: { color: 'transparent' }, stacked: true, min: 0, max: 100 }
+    }
+  }
+});
+
+/* NAV */
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* FILTER */
+function filterObjetivos(mode, btn) {
+  document.querySelectorAll('#p2 .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const d = torresData[mode];
+  torresChart.data.datasets[0].data = d.t1;
+  torresChart.data.datasets[1].data = d.t2;
+  torresChart.update();
+}
+</script>
+</body>
+</html>
