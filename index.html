@@ -1,27 +1,56 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LoL — Panel de Control Estratégico</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400&display=swap" rel="stylesheet" />
 <style>
   :root {
     --red: #E8002D;
-    --red-dim: rgba(232,0,45,0.12);
-    --bg: #0a0a0a;
-    --surface: #111111;
-    --surface2: #191919;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.14);
-    --text: #f0f0f0;
-    --muted: #666666;
-    --muted2: #999999;
+    --red-mid: #E8002D;
+    --red-l: #FF6070;
+    --red-dim: rgba(232,0,45,0.08);
+    --bg: #FAF9F9;
+    --surface: #FFFFFF;
+    --surface2: #F5EEEF;
+    --border: #EEE0E2;
+    --border2: #DDB0B8;
+    --text: #0F0F12;
+    --muted: #7A788C;
+    --muted2: #3A3A46;
     --blue: #3B82F6;
     --amber: #F59E0B;
     --green: #22C55E;
+    --canvas-bg: #FFFFFF;
+    --radius-sm: 10px;
+    --radius: 16px;
+    --radius-lg: 24px;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --t-fast: 0.2s var(--ease-out);
+    --t-mid: 0.35s var(--ease-out);
+  }
+  [data-theme="dark"] {
+    --red: #FF1A3C;
+    --red-mid: #FF3352;
+    --red-l: #FF7A8A;
+    --red-dim: rgba(255,26,60,0.12);
+    --bg: #0C0C0E;
+    --surface: #161618;
+    --surface2: #1E1E21;
+    --border: #2A1820;
+    --border2: #6B2535;
+    --text: #F0F0F2;
+    --muted: #7A788C;
+    --muted2: #C4C4CE;
+    --canvas-bg: #161618;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { color-scheme: light; }
+  html[data-theme="dark"] { color-scheme: dark; }
   body {
     background: var(--bg);
     color: var(--text);
@@ -29,39 +58,63 @@
     font-size: 14px;
     line-height: 1.5;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    transition: background var(--t-mid), color var(--t-mid);
   }
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* Smooth theme-crossfade for anything using themed vars */
+  header, nav, .nav-btn, .logo-dot, .metric-card, .metric-card::before,
+  .chart-card, .cluster-card, .filter-btn, .badge, .insight, .bar-track,
+  .factor-track, .toggle-group, .tog-btn,
+  .data-table th, .data-table td, .canvas-wrap, #theme-toggle {
+    transition: background var(--t-mid), border-color var(--t-mid), color var(--t-mid), opacity var(--t-fast);
+  }
 
   /* HEADER */
   header {
     border-bottom: 1px solid var(--border);
     padding: 0 40px;
-    height: 56px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: sticky;
     top: 0;
-    background: rgba(10,10,10,0.95);
-    backdrop-filter: blur(8px);
+    background: rgba(12,12,14,0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     z-index: 100;
   }
   .logo {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--text);
     text-decoration: none;
   }
   .logo-dot {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s var(--ease-out);
+  }
+  .logo-dot::before {
+    content: '';
     width: 8px; height: 8px;
     border-radius: 50%;
-    background: var(--red);
+    background: var(--bg);
   }
+  .logo:hover .logo-dot { background: var(--red); }
   .header-meta {
     font-size: 11px;
     color: var(--muted);
@@ -70,45 +123,70 @@
   }
   nav {
     display: flex;
-    gap: 0;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 4px;
   }
   .nav-btn {
     background: none;
     border: none;
-    color: var(--muted2);
+    color: var(--muted);
     font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 0 20px;
-    height: 56px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 8px 18px;
+    height: auto;
+    border-radius: 100px;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s, border-color 0.15s;
+    transition: color 0.15s, background 0.15s;
   }
   .nav-btn:hover { color: var(--text); }
-  .nav-btn.active { color: var(--text); border-bottom-color: var(--red); }
+  .nav-btn.active { color: #fff; background: var(--red); }
+
+  #theme-toggle {
+    width: 34px; height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); cursor: pointer;
+    transition: border-color var(--t-fast), color var(--t-fast), background var(--t-mid);
+  }
+  #theme-toggle:hover { border-color: var(--border2); color: var(--text); }
+  #theme-toggle .icon-sun  { display: none; }
+  #theme-toggle .icon-moon { display: block; }
+  [data-theme="dark"] #theme-toggle .icon-sun  { display: block; }
+  [data-theme="dark"] #theme-toggle .icon-moon { display: none; }
 
   /* LAYOUT */
-  main { padding: 40px; max-width: 1280px; margin: 0 auto; }
+  main { padding: 48px 40px; max-width: 1280px; margin: 0 auto; }
   .page { display: none; }
   .page.active { display: block; }
 
   /* PAGE TITLE */
-  .page-header { margin-bottom: 32px; }
+  .page-header { margin-bottom: 36px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--red-mid); margin-bottom: 12px;
+  }
+  .eyebrow-line { width: 20px; height: 1.5px; background: var(--red-l); border-radius: 2px; }
   .page-title {
-    font-size: 28px;
-    font-weight: 300;
-    letter-spacing: -0.02em;
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
     color: var(--text);
-    line-height: 1.2;
+    line-height: 1.15;
   }
   .page-title span { color: var(--red); }
   .page-subtitle {
-    margin-top: 6px;
-    font-size: 13px;
+    margin-top: 10px;
+    font-size: 14px;
     color: var(--muted);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
   }
 
   /* METRIC CARDS */
@@ -121,9 +199,11 @@
   .metric-card {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-radius: var(--radius);
     padding: 20px 24px;
     position: relative;
     overflow: hidden;
+    transition: border-color var(--t-fast), background var(--t-mid);
   }
   .metric-card::before {
     content: '';
@@ -132,12 +212,13 @@
     width: 3px; height: 100%;
     background: var(--red);
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity var(--t-fast), background var(--t-mid);
   }
+  .metric-card:hover { border-color: var(--border2); }
   .metric-card:hover::before { opacity: 1; }
   .metric-label {
     font-size: 10px;
-    font-weight: 500;
+    font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--muted);
@@ -145,7 +226,7 @@
   }
   .metric-value {
     font-size: 32px;
-    font-weight: 300;
+    font-weight: 800;
     letter-spacing: -0.03em;
     color: var(--text);
     line-height: 1;
@@ -169,12 +250,15 @@
   .chart-card {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-radius: var(--radius);
     padding: 24px;
+    transition: border-color var(--t-fast), background var(--t-mid);
   }
+  .chart-card:hover { border-color: var(--border2); }
   .chart-title {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.1em;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.11em;
     text-transform: uppercase;
     color: var(--muted);
     margin-bottom: 20px;
@@ -182,18 +266,18 @@
   .chart-title strong {
     display: block;
     font-size: 15px;
-    font-weight: 400;
+    font-weight: 600;
     color: var(--text);
-    letter-spacing: 0;
+    letter-spacing: -0.01em;
     text-transform: none;
-    margin-top: 2px;
+    margin-top: 3px;
   }
 
   /* FILTERS */
   .filters-bar {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 28px;
     padding-bottom: 24px;
     border-bottom: 1px solid var(--border);
@@ -206,16 +290,18 @@
   }
   .filter-btn {
     background: none;
-    border: 1px solid var(--border2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
     color: var(--muted2);
     font-size: 12px;
+    font-weight: 600;
     padding: 6px 16px;
     cursor: pointer;
     transition: all 0.15s;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
   }
-  .filter-btn:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
-  .filter-btn.active { color: var(--text); border-color: var(--red); background: var(--red-dim); }
+  .filter-btn:hover { color: var(--text); border-color: var(--border2); }
+  .filter-btn.active { color: #fff; border-color: var(--red); background: var(--red); }
 
   /* BAR TABLE — Win Rate */
   .bar-table { width: 100%; }
@@ -229,10 +315,10 @@
   }
   .bar-row:last-child { border-bottom: none; }
   .bar-name { font-size: 12px; color: var(--muted2); }
-  .bar-track { background: var(--surface2); height: 6px; position: relative; }
-  .bar-fill { height: 100%; background: var(--red); transition: width 0.6s ease; }
+  .bar-track { background: var(--surface2); height: 6px; border-radius: 3px; position: relative; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--red); border-radius: 3px; transition: width 0.6s var(--ease-out), background 0.35s var(--ease-out); }
   .bar-fill.blue { background: var(--blue); }
-  .bar-pct { font-size: 12px; font-weight: 500; text-align: right; color: var(--text); }
+  .bar-pct { font-size: 12px; font-weight: 600; text-align: right; color: var(--text); }
 
   /* CLUSTER BADGES */
   .cluster-grid {
@@ -244,28 +330,31 @@
   .cluster-card {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-radius: var(--radius);
     padding: 20px;
     position: relative;
+    transition: border-color var(--t-fast), background var(--t-mid);
   }
+  .cluster-card:hover { border-color: var(--border2); }
   .cluster-num {
     font-size: 48px;
-    font-weight: 300;
+    font-weight: 800;
     letter-spacing: -0.04em;
     line-height: 1;
     color: var(--red);
-    opacity: 0.25;
+    opacity: 0.2;
     position: absolute;
-    top: 12px; right: 16px;
+    top: 14px; right: 18px;
   }
   .cluster-tag {
     font-size: 10px;
-    font-weight: 500;
+    font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--red);
+    color: var(--red-mid);
     margin-bottom: 8px;
   }
-  .cluster-name { font-size: 14px; color: var(--text); margin-bottom: 16px; font-weight: 400; }
+  .cluster-name { font-size: 14px; color: var(--text); margin-bottom: 16px; font-weight: 600; }
   .cluster-stats { display: flex; flex-direction: column; gap: 6px; }
   .cluster-stat {
     display: flex;
@@ -296,7 +385,7 @@
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-dot {
     width: 10px; height: 10px;
-    border-radius: 2px;
+    border-radius: 3px;
     flex-shrink: 0;
   }
 
@@ -304,7 +393,7 @@
   .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .data-table th {
     font-size: 10px;
-    font-weight: 500;
+    font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--muted);
@@ -322,12 +411,13 @@
   .badge {
     display: inline-block;
     font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    padding: 2px 8px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    border-radius: 100px;
     text-transform: uppercase;
   }
-  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-red { background: var(--red-dim); color: var(--red-l); }
   .badge-blue { background: rgba(59,130,246,0.12); color: var(--blue); }
   .badge-green { background: rgba(34,197,94,0.12); color: var(--green); }
 
@@ -341,19 +431,15 @@
   /* INSIGHT BOX */
   .insight {
     border-left: 2px solid var(--red);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     padding: 14px 20px;
     background: var(--red-dim);
     margin-top: 16px;
-    font-size: 12px;
+    font-size: 12.5px;
     color: var(--muted2);
-    line-height: 1.6;
+    line-height: 1.65;
   }
-  .insight strong { color: var(--text); font-weight: 500; }
-
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .insight strong { color: var(--text); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -369,7 +455,13 @@
     <button class="nav-btn" onclick="showPage('p3',this)">Arquetipos</button>
     <button class="nav-btn" onclick="showPage('p4',this)">Predictor</button>
   </nav>
-  <span class="header-meta">51,490 partidas · Season 2018</span>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <span class="header-meta">51,490 partidas · Season 2018</span>
+    <button id="theme-toggle" aria-label="Cambiar tema">
+      <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
 </header>
 
 <main>
@@ -377,6 +469,7 @@
 <!-- ===================== PAGE 1: KPIs ===================== -->
 <div class="page active" id="p1">
   <div class="page-header">
+    <div class="eyebrow"><span class="eyebrow-line"></span> Overview</div>
     <h1 class="page-title">Panel de Control <span>Estratégico</span></h1>
     <p class="page-subtitle">League of Legends · Modelo Gradient Boosting · AUC = 0.998 · Accuracy = 98.2%</p>
   </div>
@@ -408,8 +501,8 @@
     <div class="chart-card">
       <div class="chart-title">Distribución <strong>Victorias por equipo</strong></div>
       <div class="legend">
-        <span class="legend-item"><span class="legend-dot" style="background:#E8002D"></span>Team 1</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#3B82F6"></span>Team 2</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Team 1</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Team 2</span>
       </div>
       <div class="canvas-wrap h260"><canvas id="c-winrate" role="img" aria-label="Donut chart de victorias: Team 1 49.8%, Team 2 50.2%">Team 1: 49.8%, Team 2: 50.2%</canvas></div>
     </div>
@@ -434,6 +527,7 @@
 <!-- ===================== PAGE 2: OBJETIVOS ===================== -->
 <div class="page" id="p2">
   <div class="page-header">
+    <div class="eyebrow"><span class="eyebrow-line"></span> Objetivos</div>
     <h1 class="page-title">Análisis de <span>Objetivos</span></h1>
     <p class="page-subtitle">Control de mapa, objetivos épicos y su relación con el resultado</p>
   </div>
@@ -505,6 +599,7 @@
 <!-- ===================== PAGE 3: ARQUETIPOS ===================== -->
 <div class="page" id="p3">
   <div class="page-header">
+    <div class="eyebrow"><span class="eyebrow-line"></span> Segmentación</div>
     <h1 class="page-title">Arquetipos de <span>Partida</span></h1>
     <p class="page-subtitle">Segmentación K-Means (K=3) · Perfiles tácticos identificados</p>
   </div>
@@ -549,9 +644,9 @@
     <div class="chart-card">
       <div class="chart-title">Distribución <strong>Partidas por arquetipo</strong></div>
       <div class="legend">
-        <span class="legend-item"><span class="legend-dot" style="background:#E8002D"></span>Cluster 0 — T1 domina</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#3B82F6"></span>Cluster 1 — T2 rápido</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#F59E0B"></span>Cluster 2 — T2 largo</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Cluster 0 — T1 domina</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Cluster 1 — T2 rápido</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Cluster 2 — T2 largo</span>
       </div>
       <div class="canvas-wrap h260"><canvas id="c-donut" role="img" aria-label="Donut de distribución de clusters: Cluster 0 43.6%, Cluster 1 26.4%, Cluster 2 30%">Cluster 0: 43.6%, Cluster 1: 26.4%, Cluster 2: 30%</canvas></div>
     </div>
@@ -608,6 +703,7 @@
 <!-- ===================== PAGE 4: PREDICTOR ===================== -->
 <div class="page" id="p4">
   <div class="page-header">
+    <div class="eyebrow"><span class="eyebrow-line"></span> Predicción en vivo</div>
     <h1 class="page-title">Match <span>Predictor</span></h1>
     <p class="page-subtitle">Ingresa los datos de la partida · Modelo Gradient Boosting calibrado · AUC = 0.998</p>
   </div>
@@ -735,13 +831,13 @@
         <div style="position:relative; display:inline-block; margin: 8px 0 4px;">
           <canvas id="c-gauge" width="260" height="140" role="img" aria-label="Gauge de probabilidad de victoria"></canvas>
           <div id="gauge-label" style="position:absolute; bottom:12px; left:50%; transform:translateX(-50%); text-align:center;">
-            <div id="gauge-pct" style="font-size:42px; font-weight:300; letter-spacing:-0.03em; color:#f0f0f0; line-height:1;">50%</div>
-            <div id="gauge-team" style="font-size:11px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:#666; margin-top:2px;">Empate técnico</div>
+            <div id="gauge-pct" style="font-size:42px; font-weight:800; letter-spacing:-0.03em; color:var(--text); line-height:1; transition:color 0.3s var(--ease-out);">50%</div>
+            <div id="gauge-team" style="font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-top:4px; transition:color 0.3s var(--ease-out);">Empate técnico</div>
           </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; font-size:11px; color:#444; margin-top:8px; padding:0 16px;">
-          <span style="color:#E8002D">◀ Team 1</span>
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:#7A788C; margin-top:8px; padding:0 16px;">
+          <span style="color:#FF1A3C">◀ Team 1</span>
           <span style="color:#3B82F6">Team 2 ▶</span>
         </div>
       </div>
@@ -751,8 +847,8 @@
         <div class="chart-title">Arquetipo detectado <strong id="cluster-name">—</strong></div>
         <div style="display:flex; flex-direction:column; gap:8px;" id="cluster-details">
           <div class="cluster-stat" style="border-top:none; padding-top:0; font-size:12px;">
-            <span style="color:#666">Descripción</span>
-            <span id="cluster-desc" style="color:#999; font-size:11px; text-align:right; max-width:60%">Ajusta los valores para detectar el arquetipo</span>
+            <span style="color:#7A788C">Descripción</span>
+            <span id="cluster-desc" style="color:#C4C4CE; font-size:11px; text-align:right; max-width:60%">Ajusta los valores para detectar el arquetipo</span>
           </div>
         </div>
       </div>
@@ -785,25 +881,27 @@
   }
   .pred-row:last-child { border-bottom: none; }
   .pred-label { font-size: 12px; color: var(--muted2); min-width: 120px; }
-  .toggle-group { display: flex; gap: 4px; }
+  .toggle-group { display: flex; gap: 4px; background: var(--surface2); border-radius: 100px; padding: 3px; }
   .tog-btn {
     background: none;
-    border: 1px solid var(--border2);
+    border: none;
+    border-radius: 100px;
     color: var(--muted);
     font-size: 11px;
-    padding: 5px 12px;
+    font-weight: 600;
+    padding: 6px 13px;
     cursor: pointer;
     transition: all 0.15s;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
   }
-  .tog-btn:hover { color: var(--text); background: var(--surface2); }
-  .tog-btn.active { color: var(--text); border-color: var(--red); background: var(--red-dim); }
-  .tog-btn.active-blue { color: var(--blue); border-color: var(--blue); background: rgba(59,130,246,0.1); }
-  .tog-btn.active-neutral { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+  .tog-btn:hover { color: var(--text); }
+  .tog-btn.active { color: #fff; background: var(--red); }
+  .tog-btn.active-blue { color: #fff; background: var(--blue); }
+  .tog-btn.active-neutral { color: var(--text); background: var(--border2); }
 
   .slider-block { display: flex; flex-direction: column; gap: 8px; }
   .slider-header { display: flex; justify-content: space-between; align-items: center; }
-  .slider-val { font-size: 14px; font-weight: 500; color: var(--text); min-width: 48px; text-align: right; }
+  .slider-val { font-size: 14px; font-weight: 700; color: var(--text); min-width: 48px; text-align: right; }
   input[type=range] { width: 100%; accent-color: var(--red); }
 
   .factor-row {
@@ -814,23 +912,40 @@
     font-size: 11px;
   }
   .factor-name { color: var(--muted2); }
-  .factor-track { background: var(--surface2); height: 4px; }
-  .factor-bar { height: 100%; transition: width 0.4s ease; }
-  .factor-pct { color: var(--text); font-weight: 500; text-align: right; }
+  .factor-track { background: var(--surface2); height: 4px; border-radius: 2px; overflow: hidden; }
+  .factor-bar { height: 100%; border-radius: 2px; transition: width 0.45s var(--ease-out), background 0.3s var(--ease-out); }
+  .factor-pct { color: var(--text); font-weight: 600; text-align: right; }
 </style>
 
 <script>
-const C = {
-  red: '#E8002D', blue: '#3B82F6', amber: '#F59E0B',
-  green: '#22C55E', muted: '#444444', surface: '#191919',
-  text: '#f0f0f0', border: 'rgba(255,255,255,0.07)'
+const THEME = {
+  dark: {
+    red: '#FF1A3C', blue: '#3B82F6', amber: '#F59E0B', green: '#22C55E',
+    muted: '#7A788C', text: '#F0F0F2', textDim: '#C4C4CE',
+    border: '#2A1820', cardBg: '#161618', tooltipBg: '#161618',
+    inactive: '#333338',
+    redA35: 'rgba(255,26,60,0.35)', redA08: 'rgba(255,26,60,0.08)', blueA08: 'rgba(59,130,246,0.08)'
+  },
+  light: {
+    red: '#E8002D', blue: '#3B82F6', amber: '#F59E0B', green: '#22C55E',
+    muted: '#7A788C', text: '#0F0F12', textDim: '#3A3A46',
+    border: '#EEE0E2', cardBg: '#FFFFFF', tooltipBg: '#FFFFFF',
+    inactive: '#E5DEE0',
+    redA35: 'rgba(232,0,45,0.30)', redA08: 'rgba(232,0,45,0.08)', blueA08: 'rgba(59,130,246,0.08)'
+  }
 };
+function currentThemeName() {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+const C = Object.assign({}, THEME[currentThemeName()]);
+
 const baseOpts = {
   responsive: true, maintainAspectRatio: false,
+  animation: { duration: 500, easing: 'easeOutCubic' },
   plugins: { legend: { display: false }, tooltip: {
-    backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)',
-    borderWidth: 1, titleColor: '#f0f0f0', bodyColor: '#999',
-    padding: 10, cornerRadius: 2
+    backgroundColor: C.tooltipBg, borderColor: C.border,
+    borderWidth: 1, titleColor: C.text, bodyColor: C.textDim,
+    padding: 10, cornerRadius: 8, titleFont: { weight: '600' }
   }}
 };
 
@@ -838,7 +953,7 @@ function grid(axis) {
   return { color: C.border, lineWidth: 0.5, drawTicks: false };
 }
 function ticks(color) {
-  return { color: '#666', font: { size: 11 }, padding: 8 };
+  return { color: C.muted, font: { size: 11 }, padding: 8 };
 }
 
 /* PAGE 1 CHARTS */
@@ -847,7 +962,7 @@ new Chart('c-winrate', {
   data: {
     labels: ['Team 1', 'Team 2'],
     datasets: [{ data: [49.8, 50.2], backgroundColor: [C.red, C.blue],
-      borderColor: '#0a0a0a', borderWidth: 3, hoverOffset: 4 }]
+      borderColor: C.cardBg, borderWidth: 3, hoverOffset: 4 }]
   },
   options: { ...baseOpts, cutout: '72%',
     plugins: { ...baseOpts.plugins,
@@ -864,7 +979,7 @@ new Chart('c-hitos', {
     labels: ['Primer\nInhibidor','Primer\nBarón','Primera\nTorre','Primer\nDragón','First\nBlood'],
     datasets: [{
       data: [83, 80, 72, 59, 57],
-      backgroundColor: [C.red, C.red, C.red, '#555', '#555'],
+      backgroundColor: [C.red, C.red, C.red, C.inactive, C.inactive],
       borderRadius: 0, borderSkipped: false
     }]
   },
@@ -901,7 +1016,7 @@ new Chart('c-duration', {
     labels: ['5','10','15','20','25','30','35','40','45','50','55','60'],
     datasets: [
       { label: 'Team 1 gana', data: [0,1,4,9,18,22,19,13,8,4,2,1],
-        borderColor: C.red, backgroundColor: 'rgba(232,0,45,0.08)',
+        borderColor: C.red, backgroundColor: C.redA08,
         borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 },
       { label: 'Team 2 gana', data: [0,2,6,12,20,21,18,12,6,2,1,0],
         borderColor: C.blue, backgroundColor: 'rgba(59,130,246,0.08)',
@@ -973,7 +1088,7 @@ new Chart('c-scatter', {
   data: {
     datasets: [{
       data: scatterPoints,
-      backgroundColor: 'rgba(232,0,45,0.35)',
+      backgroundColor: C.redA35,
       pointRadius: 4,
       pointHoverRadius: 6
     }]
@@ -981,10 +1096,10 @@ new Chart('c-scatter', {
   options: { ...baseOpts,
     scales: {
       x: { grid: grid('x'), ticks: { ...ticks(), callback: v => (v > 0 ? '+' : '') + v },
-           border: { color: C.border }, title: { display: true, text: 'tower_diff', color: '#666', font: { size: 11 } } },
+           border: { color: C.border }, title: { display: true, text: 'tower_diff', color: '#7A788C', font: { size: 11 } } },
       y: { grid: grid('y'), ticks: { ...ticks(), callback: v => (v*100).toFixed(0) + '%' },
            border: { color: 'transparent' }, min: 0, max: 1,
-           title: { display: true, text: 'P(Victoria T1)', color: '#666', font: { size: 11 } } }
+           title: { display: true, text: 'P(Victoria T1)', color: '#7A788C', font: { size: 11 } } }
     }
   }
 });
@@ -995,7 +1110,7 @@ new Chart('c-fi', {
     labels: ['tower_diff','t1_towerKills','t2_towerKills','obj_diff','firstInhibitor','t1_objectives','t2_objectives','firstTower','firstBlood'],
     datasets: [{
       data: [0.38, 0.18, 0.17, 0.09, 0.07, 0.04, 0.03, 0.02, 0.01],
-      backgroundColor: ctx => ctx.parsed.x >= 0.07 ? C.red : '#333',
+      backgroundColor: ctx => ctx.parsed.x >= 0.07 ? C.red : C.inactive,
       borderRadius: 0
     }]
   },
@@ -1015,7 +1130,7 @@ new Chart('c-donut', {
     datasets: [{
       data: [43.6, 26.4, 30.0],
       backgroundColor: [C.red, C.blue, C.amber],
-      borderColor: '#0a0a0a', borderWidth: 3, hoverOffset: 4
+      borderColor: C.cardBg, borderWidth: 3, hoverOffset: 4
     }]
   },
   options: { ...baseOpts, cutout: '68%' }
@@ -1058,6 +1173,71 @@ new Chart('c-clusterwinner', {
   }
 });
 
+/* THEME TOGGLE */
+function themeAllCharts() {
+  const ids = ['c-winrate','c-hitos','c-towerdiff','c-duration','c-torres','c-obj','c-scatter','c-fi','c-donut','c-durcluster','c-clusterwinner'];
+  ids.forEach(id => {
+    const chart = Chart.getChart(id);
+    if (!chart) return;
+    const tt = chart.options.plugins.tooltip;
+    tt.backgroundColor = C.tooltipBg; tt.borderColor = C.border;
+    tt.titleColor = C.text; tt.bodyColor = C.textDim;
+    const scales = chart.options.scales;
+    if (scales) {
+      Object.values(scales).forEach(s => {
+        if (s.grid) s.grid.color = C.border;
+        if (s.ticks) s.ticks.color = C.muted;
+        if (s.border && s.border.color !== 'transparent') s.border.color = C.border;
+        if (s.title) s.title.color = C.muted;
+      });
+    }
+  });
+
+  const winrate = Chart.getChart('c-winrate');
+  if (winrate) { winrate.data.datasets[0].backgroundColor = [C.red, C.blue]; winrate.data.datasets[0].borderColor = C.cardBg; }
+  const hitos = Chart.getChart('c-hitos');
+  if (hitos) { hitos.data.datasets[0].backgroundColor = [C.red, C.red, C.red, C.inactive, C.inactive]; }
+  const towerdiff = Chart.getChart('c-towerdiff');
+  if (towerdiff) { towerdiff.data.datasets[0].backgroundColor = [C.red, C.blue]; }
+  const duration = Chart.getChart('c-duration');
+  if (duration) { duration.data.datasets[0].borderColor = C.red; duration.data.datasets[0].backgroundColor = C.redA08; duration.data.datasets[1].borderColor = C.blue; }
+  const torres = Chart.getChart('c-torres');
+  if (torres) { torres.data.datasets[0].backgroundColor = C.red; torres.data.datasets[1].backgroundColor = C.blue; }
+  const obj = Chart.getChart('c-obj');
+  if (obj) { obj.data.datasets[0].backgroundColor = C.red; obj.data.datasets[1].backgroundColor = C.blue; }
+  const scatter = Chart.getChart('c-scatter');
+  if (scatter) { scatter.data.datasets[0].backgroundColor = C.redA35; }
+  const donut = Chart.getChart('c-donut');
+  if (donut) { donut.data.datasets[0].backgroundColor = [C.red, C.blue, C.amber]; donut.data.datasets[0].borderColor = C.cardBg; }
+  const durcluster = Chart.getChart('c-durcluster');
+  if (durcluster) { durcluster.data.datasets[0].backgroundColor = [C.red, C.blue, C.amber]; }
+  const clusterwinner = Chart.getChart('c-clusterwinner');
+  if (clusterwinner) { clusterwinner.data.datasets[0].backgroundColor = C.red; clusterwinner.data.datasets[1].backgroundColor = C.blue; }
+
+  ids.forEach(id => { const chart = Chart.getChart(id); if (chart) chart.update('none'); });
+}
+
+function setTheme(name, persist) {
+  document.documentElement.setAttribute('data-theme', name);
+  Object.assign(C, THEME[name]);
+  themeAllCharts();
+  if (typeof drawGauge === 'function' && typeof lastProb === 'number') drawGauge(lastProb, true);
+  if (persist) { try { localStorage.setItem('theme', name); } catch(e) {} }
+}
+
+(function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem('theme'); } catch(e) {}
+  const initial = saved || 'dark';
+  document.documentElement.setAttribute('data-theme', initial);
+  Object.assign(C, THEME[initial]);
+})();
+
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const next = currentThemeName() === 'dark' ? 'light' : 'dark';
+  setTheme(next, true);
+});
+
 /* NAV */
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1093,7 +1273,7 @@ function setToggle(key, val, btn) {
 
 function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
 
-function predict() {
+function predict(instant) {
   const t1tk = +document.getElementById('sl-t1tk').value;
   const t2tk = +document.getElementById('sl-t2tk').value;
   const t1ob = +document.getElementById('sl-t1ob').value;
@@ -1119,13 +1299,19 @@ function predict() {
   const probT1 = Math.max(0.01, Math.min(0.99, sigmoid(logit)));
   const probT2 = 1 - probT1;
 
-  drawGauge(probT1);
+  drawGauge(probT1, instant);
   updateCluster(towerDiff, objDiff, dur);
   updateFactors(towerDiff, objDiff, state);
   updateInsight(probT1, towerDiff, state.fi, dur);
 }
 
-function drawGauge(p) {
+let lastProb = 0.5;
+let displayedProb = 0.5;
+let gaugeAnimId = null;
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function drawGaugeFrame(p) {
   const canvas = document.getElementById('c-gauge');
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
@@ -1137,36 +1323,36 @@ function drawGauge(p) {
   ctx.beginPath();
   ctx.arc(cx, cy, R, Math.PI, 0);
   ctx.lineWidth = 18;
-  ctx.strokeStyle = '#1a1a1a';
+  ctx.strokeStyle = C.inactive;
   ctx.stroke();
 
-  /* T2 zone (right) */
+  /* T1 zone (left of needle) */
   const midAngle = Math.PI + p * Math.PI;
   ctx.beginPath();
   ctx.arc(cx, cy, R, Math.PI, midAngle);
-  ctx.strokeStyle = '#E8002D';
+  ctx.strokeStyle = C.red;
   ctx.lineWidth = 18;
   ctx.stroke();
 
   ctx.beginPath();
   ctx.arc(cx, cy, R, midAngle, 0);
-  ctx.strokeStyle = '#3B82F6';
+  ctx.strokeStyle = C.blue;
   ctx.lineWidth = 18;
   ctx.stroke();
 
   /* needle */
-  const angle = Math.PI + p * Math.PI;
+  const angle = midAngle;
   const nx = cx + (R - 2) * Math.cos(angle);
   const ny = cy + (R - 2) * Math.sin(angle);
   ctx.beginPath();
   ctx.moveTo(cx, cy);
   ctx.lineTo(nx, ny);
-  ctx.strokeStyle = '#f0f0f0';
+  ctx.strokeStyle = C.text;
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.beginPath();
   ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-  ctx.fillStyle = '#f0f0f0';
+  ctx.fillStyle = C.text;
   ctx.fill();
 
   /* labels */
@@ -1175,31 +1361,75 @@ function drawGauge(p) {
   const teamEl = document.getElementById('gauge-team');
   if (p > 0.62) {
     teamEl.textContent = 'Team 1 favorito';
-    teamEl.style.color = '#E8002D';
+    teamEl.style.color = C.red;
   } else if (p < 0.38) {
     teamEl.textContent = 'Team 2 favorito';
-    teamEl.style.color = '#3B82F6';
+    teamEl.style.color = C.blue;
   } else {
     teamEl.textContent = 'Partida equilibrada';
-    teamEl.style.color = '#666';
+    teamEl.style.color = C.muted;
   }
+}
+
+function drawGauge(targetP, instant) {
+  if (gaugeAnimId) cancelAnimationFrame(gaugeAnimId);
+  lastProb = targetP;
+
+  if (instant) {
+    displayedProb = targetP;
+    drawGaugeFrame(targetP);
+    return;
+  }
+
+  const from = displayedProb;
+  const to = targetP;
+  const duration = 380;
+  const start = performance.now();
+
+  function step(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = easeOutCubic(t);
+    displayedProb = from + (to - from) * eased;
+    drawGaugeFrame(displayedProb);
+    if (t < 1) {
+      gaugeAnimId = requestAnimationFrame(step);
+    } else {
+      gaugeAnimId = null;
+    }
+  }
+  gaugeAnimId = requestAnimationFrame(step);
 }
 
 function updateCluster(td, od, dur) {
   let name, desc, color;
   if (td < -2) {
-    name = 'Cluster 0 — Dominio T1'; color = '#E8002D';
+    name = 'Cluster 0 — Dominio T1'; color = C.red;
     desc = 'T1 domina el mapa con ventaja en torres. Partida progresiva (~32 min).';
   } else if (dur < 27) {
-    name = 'Cluster 1 — T2 cierre rápido'; color = '#3B82F6';
+    name = 'Cluster 1 — T2 cierre rápido'; color = C.blue;
     desc = 'Partida corta y contundente. T2 cierra antes de los 27 min.';
   } else {
-    name = 'Cluster 2 — Control T2 largo'; color = '#F59E0B';
+    name = 'Cluster 2 — Control T2 largo'; color = C.amber;
     desc = 'Partida extensa con dominio de objetivos épicos. T2 gana por acumulación.';
   }
-  document.getElementById('cluster-name').textContent = name;
-  document.getElementById('cluster-name').style.color = color;
-  document.getElementById('cluster-desc').textContent = desc;
+  const nameEl = document.getElementById('cluster-name');
+  const descEl = document.getElementById('cluster-desc');
+  if (nameEl.textContent !== name) {
+    nameEl.style.transition = 'opacity 0.18s var(--ease-out), color 0.3s var(--ease-out)';
+    descEl.style.transition = 'opacity 0.18s var(--ease-out)';
+    nameEl.style.opacity = '0';
+    descEl.style.opacity = '0';
+    setTimeout(() => {
+      nameEl.textContent = name;
+      nameEl.style.color = color;
+      descEl.textContent = desc;
+      nameEl.style.opacity = '1';
+      descEl.style.opacity = '1';
+    }, 180);
+  } else {
+    nameEl.style.transition = 'color 0.3s var(--ease-out)';
+    nameEl.style.color = color;
+  }
 }
 
 function updateFactors(td, od, s) {
@@ -1213,17 +1443,32 @@ function updateFactors(td, od, s) {
   ];
 
   const list = document.getElementById('factors-list');
-  list.innerHTML = factors.map(f => {
-    const color = f.favor === 1 ? '#E8002D' : '#3B82F6';
+
+  /* Build the row skeleton once; afterwards only update width/color/text
+     in place so CSS transitions can animate instead of snapping. */
+  if (list.children.length !== factors.length) {
+    list.innerHTML = factors.map((f, i) => `
+      <div class="factor-row">
+        <span class="factor-name" id="fac-name-${i}"></span>
+        <div class="factor-track">
+          <div class="factor-bar" id="fac-bar-${i}" style="width:0%"></div>
+        </div>
+        <span class="factor-pct" id="fac-pct-${i}"></span>
+      </div>`).join('');
+  }
+
+  factors.forEach((f, i) => {
+    const color = f.favor === 1 ? C.red : C.blue;
     const pctW = Math.round(f.val * 100);
-    return `<div class="factor-row">
-      <span class="factor-name">${f.name}</span>
-      <div class="factor-track">
-        <div class="factor-bar" style="width:${pctW}%; background:${color}"></div>
-      </div>
-      <span class="factor-pct" style="color:${color}">${f.raw}</span>
-    </div>`;
-  }).join('');
+    document.getElementById('fac-name-' + i).textContent = f.name;
+    const bar = document.getElementById('fac-bar-' + i);
+    bar.style.width = pctW + '%';
+    bar.style.background = color;
+    const pctEl = document.getElementById('fac-pct-' + i);
+    pctEl.textContent = f.raw;
+    pctEl.style.transition = 'color 0.3s var(--ease-out)';
+    pctEl.style.color = color;
+  });
 }
 
 function updateInsight(p, td, fi, dur) {
@@ -1242,11 +1487,18 @@ function updateInsight(p, td, fi, dur) {
     const pct = p >= 0.5 ? Math.round(p*100) : Math.round((1-p)*100);
     msg = `<strong>${fav} lleva ligera ventaja</strong> (${pct}%). La partida sigue abierta — el primer inhibidor que caiga probablemente decidirá el resultado.`;
   }
-  el.innerHTML = msg;
+  if (el.dataset.msg === msg) return;
+  el.dataset.msg = msg;
+  el.style.transition = 'opacity 0.18s var(--ease-out)';
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.innerHTML = msg;
+    el.style.opacity = '1';
+  }, 180);
 }
 
 /* Init predictor on load */
-predict();
+predict(true);
 </script>
 </body>
 </html>
